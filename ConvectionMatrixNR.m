@@ -64,6 +64,7 @@ for ielem = 1:nElem
         Nxi_ig(1:ngeom)*(u_e(:,1))	Nxi_ig(1:ngeom)*(u_e(:,2))
         Neta_ig(1:ngeom)*(u_e(:,1))	Neta_ig(1:ngeom)*(u_e(:,2))
         ];
+
     
     Ce1 = Ce1 + Ngp'*(v_igaus(1)*Nx+v_igaus(2)*Ny)*dvolu; 
     Ce2 = Ce2 + Ngp'*Jacob_v'*Ngp*dvolu; 
