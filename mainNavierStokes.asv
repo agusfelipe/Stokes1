@@ -125,10 +125,10 @@ while iter < 100
 %     Zred = Z(dofUnk,dofUnk); 
 %     J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred + Zred;
      
-    res = Atot*sol0 - btot;
+    F = Atot*sol0 - btot;
    
     % Computation of velocity and pressure increment
-    solInc = -J\res;
+    solInc = -J\F;
     
     % Update the solution
     veloInc = zeros(ndofV,1); 
@@ -139,9 +139,9 @@ while iter < 100
     
     % Check convergence
     delta1 = max(abs(veloInc)); 
-    delta2 = max(abs(res));
+    delta2 = max(abs(F));
     Conv(iter+1,1) = iter+1;
-    Conv(iter+1,2) = max(abs(res));
+    Conv(iter+1,2) = max(abs(F));
     fprintf('Velocity increment=%8.6e, Residue max=%8.6e\n',delta1,delta2); 
     if delta1 < tol*max(max(abs(velo))) && delta2 < tol
         fprintf('\nConvergence achieved in iteration number %g\n',iter); 
