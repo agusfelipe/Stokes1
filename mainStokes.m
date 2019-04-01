@@ -9,7 +9,7 @@ mu = 1;
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
 %elemV = 0; degreeV = 2; degreeP = 1;
- elemV = 1; degreeV = 1; degreeP = 1;
+ elemV = 1; degreeV = 2; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
     elemP = 1; 
@@ -22,36 +22,76 @@ nx = cinput('Number of elements in each direction',10);
 ny = nx; 
 [X,T,XP,TP] = CreateMeshes(dom,nx,ny,referenceElement);
 
-figure; PlotMesh(T,X,elemV,'b-');
-figure; PlotMesh(TP,XP,elemP,'r-');
+%figure; PlotMesh(T,X,elemV,'b-');
+%figure; PlotMesh(TP,XP,elemP,'r-');
 
-% Matrices arising from the discretization
-[K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
-K = mu*K; 
-[ndofP,ndofV] = size(G); 
+if degreeV==1
+    
+    % Matrices arising from the discretization
+    [K,G,f,L,f_q] = StokesSystemStableTry(X,T,XP,TP,referenceElement);
+    K = mu*K; 
+    [ndofP,ndofV] = size(G); 
 
-% Prescribed velocity degrees of freedom
-[dofDir,valDir,dofUnk,confined] = BC_red(X,dom,ndofV);
-nunkV = length(dofUnk); 
+    % Prescribed velocity degrees of freedom
+    [dofDir,valDir,dofUnk,confined] = BC_red(X,dom,ndofV);
+    nunkV = length(dofUnk); 
 
-% Total system of equations
-if confined
-   nunkP = ndofP-1;
-   disp(' ')
-   disp('Confined flow. Pressure on lower left corner is set to zero');
-   G(1,:) = [];
+    % Total system of equations
+    if confined
+       nunkP = ndofP-1;
+       disp(' ')
+       disp('Confined flow. Pressure on lower left corner is set to zero');
+       G(1,:) = [];
+       L(1,:) = [];
+       L(:,1) = [];
+       f_q(1) = [];
+       
+    else
+       nunkP = ndofP;
+    end
+
+    f = f - K(:,dofDir)*valDir; 
+    Kred = K(dofUnk,dofUnk); 
+    Gred = G(:,dofUnk); 
+    fred = f(dofUnk);
+    %Lred = L(nunkP,nunkP);
+    %f_qr = f(nunkP);
+
+    A = [Kred   Gred'; 
+         Gred   L]; 
+    b = [fred; f_q];
+
 else
-   nunkP = ndofP;
+    
+    % Matrices arising from the discretization
+    [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
+    K = mu*K; 
+    [ndofP,ndofV] = size(G); 
+
+    % Prescribed velocity degrees of freedom
+    [dofDir,valDir,dofUnk,confined] = BC_red(X,dom,ndofV);
+    nunkV = length(dofUnk); 
+
+    % Total system of equations
+    if confined
+       nunkP = ndofP-1;
+       disp(' ')
+       disp('Confined flow. Pressure on lower left corner is set to zero');
+       G(1,:) = [];
+    else
+       nunkP = ndofP;
+    end
+
+    f = f - K(:,dofDir)*valDir; 
+    Kred = K(dofUnk,dofUnk); 
+    Gred = G(:,dofUnk); 
+    fred = f(dofUnk); 
+
+    A = [Kred   Gred'; 
+         Gred   zeros(nunkP)]; 
+    b = [fred; zeros(nunkP,1)];
+
 end
-
-f = f - K(:,dofDir)*valDir; 
-Kred = K(dofUnk,dofUnk); 
-Gred = G(:,dofUnk); 
-fred = f(dofUnk); 
-
-A = [Kred   Gred'; 
-     Gred   zeros(nunkP)]; 
-b = [fred; zeros(nunkP,1)];
 
 sol = A\b; 
 
