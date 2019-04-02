@@ -65,7 +65,7 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 
-iter = 0; tol = 0.5e-08; 
+iter = 0; tol = 0.5e-8; 
 
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
@@ -111,23 +111,24 @@ else %Newton-Raphson
 while iter < 100
     fprintf('Iteration = %d\n',iter);
     
-    C = ConvectionMatrix(X,T,referenceElement,velo);
-    Cred = C(dofUnk,dofUnk); 
+    [C1,C2] = ConvectionMatrixNR(X,T,referenceElement,velo);
+    Cred1 = C1(dofUnk,dofUnk); 
+    Cred2 = C2(dofUnk,dofUnk); 
+    
+    A = [Kred + Cred1  Gred';
+     Gred   zeros(nunkP)]; 
     
     Atot = A;
-    Atot(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred; 
-    btot = [fred - C(dofUnk,dofDir)*valDir; zeros(nunkP,1)]; 
+    btot = [fred - (C1(dofUnk,dofDir))*valDir; zeros(nunkP,1)]; 
     
-    J = A;
-    J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + 2*Cred;
-%     Z = ConvectionMatrix2(X,T,referenceElement,velo);
-%     Zred = Z(dofUnk,dofUnk); 
-%     J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred + Zred;
+    J = [Kred + Cred1 + Cred2  Gred';
+     Gred   zeros(nunkP)]; 
      
     F = Atot*sol0 - btot;
    
     % Computation of velocity and pressure increment
-    solInc = -J\F;
+    
+    solInc =-J\F;
     
     % Update the solution
     veloInc = zeros(ndofV,1); 
