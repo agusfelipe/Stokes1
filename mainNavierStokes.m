@@ -65,7 +65,7 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 
-iter = 0; tol = 0.5e-15; 
+iter = 0; tol = 0.5e-8; 
 
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
