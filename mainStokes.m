@@ -9,7 +9,7 @@ mu = 1;
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
 %elemV = 0; degreeV = 2; degreeP = 1;
- elemV = 1; degreeV = 2; degreeP = 1;
+ elemV = 0; degreeV = 1; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
     elemP = 1; 
@@ -22,8 +22,8 @@ nx = cinput('Number of elements in each direction',10);
 ny = nx; 
 [X,T,XP,TP] = CreateMeshes(dom,nx,ny,referenceElement);
 
-%figure; PlotMesh(T,X,elemV,'b-');
-%figure; PlotMesh(TP,XP,elemP,'r-');
+figure; PlotMesh(T,X,elemV,'b-');
+figure; PlotMesh(TP,XP,elemP,'r-');
 
 if degreeV==1
     
