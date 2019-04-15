@@ -9,7 +9,7 @@ mu = 1;
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
 %elemV = 0; degreeV = 2; degreeP = 1;
- elemV = 1; degreeV = 2; degreeP = 1;
+ elemV = 1; degreeV = 1; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
     elemP = 1; 
@@ -24,11 +24,11 @@ ny = nx;
 
 %figure; PlotMesh(T,X,elemV,'b-');
 %figure; PlotMesh(TP,XP,elemP,'r-');
-
+tic
 if degreeV==1
     
     % Matrices arising from the discretization
-    [K,G,f,L,f_q] = StokesSystemStableTry(X,T,XP,TP,referenceElement);
+    [K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement);
     K = mu*K; 
     [ndofP,ndofV] = size(G); 
 
@@ -103,7 +103,7 @@ pres = sol(nunkV+1:end);
 if confined
     pres = [0; pres]; 
 end
-
+toc
 nPt = size(X,1); 
 figure; 
 quiver(X(1:nPt,1),X(1:nPt,2),velo(1:nPt,1),velo(1:nPt,2));

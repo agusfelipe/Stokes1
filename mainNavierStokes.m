@@ -1,5 +1,5 @@
 % This program solves the Navier-Stokes cavity problem
-clear; close all; clc
+%clear; close all; clc
 
 addpath('Func_ReferenceElement')
 
@@ -23,8 +23,8 @@ nx = cinput('Number of elements in each direction',10);
 ny = nx; 
 [X,T,XP,TP] = CreateMeshes(dom,nx,ny,referenceElement);
 
-figure; PlotMesh(T,X,elemV,'b-');
-figure; PlotMesh(TP,XP,elemP,'r-');
+% figure; PlotMesh(T,X,elemV,'b-');
+% figure; PlotMesh(TP,XP,elemP,'r-');
 
 % Matrices arising from the discretization
 [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
@@ -65,8 +65,8 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 
-iter = 0; tol = 0.5e-08; 
-
+iter = 0; tol = 1e-12; 
+tic
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
 while iter < 100
@@ -111,23 +111,24 @@ else %Newton-Raphson
 while iter < 100
     fprintf('Iteration = %d\n',iter);
     
-    C = ConvectionMatrix(X,T,referenceElement,velo);
-    Cred = C(dofUnk,dofUnk); 
+    [C1,C2] = ConvectionMatrixNR(X,T,referenceElement,velo);
+    Cred = C1(dofUnk,dofUnk); 
+    Cred2= C2(dofUnk,dofUnk);
     
     Atot = A;
     Atot(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred; 
-    btot = [fred - C(dofUnk,dofDir)*valDir; zeros(nunkP,1)]; 
+    btot = [fred - C1(dofUnk,dofDir)*valDir; zeros(nunkP,1)]; 
     
     J = A;
-    J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + 2*Cred;
+    J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred + Cred2;
 %     Z = ConvectionMatrix2(X,T,referenceElement,velo);
 %     Zred = Z(dofUnk,dofUnk); 
 %     J(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred + Zred;
      
-    F = Atot*sol0 - btot;
+    res = Atot*sol0 - btot;
    
     % Computation of velocity and pressure increment
-    solInc = -J\F;
+    solInc = -J\res;
     
     % Update the solution
     veloInc = zeros(ndofV,1); 
@@ -138,9 +139,9 @@ while iter < 100
     
     % Check convergence
     delta1 = max(abs(veloInc)); 
-    delta2 = max(abs(F));
+    delta2 = max(abs(res));
     Conv(iter+1,1) = iter+1;
-    Conv(iter+1,2) = max(abs(F));
+    Conv(iter+1,2) = max(abs(res));
     fprintf('Velocity increment=%8.6e, Residue max=%8.6e\n',delta1,delta2); 
     if delta1 < tol*max(max(abs(velo))) && delta2 < tol
         fprintf('\nConvergence achieved in iteration number %g\n',iter); 
@@ -154,8 +155,12 @@ while iter < 100
 end
 
 end
-
-plot(Conv(:,1),log(Conv(:,2)));
+toc
+hold on
+plot(Conv(:,1)-1,log10(Conv(:,2)),'k:o','LineWidth',2,'MarkerSize',6); %b-s k:o
+l = legend('Newton-Raphson','Picard''s');
+ylabel('log_{10}(Maximum Residual)')
+xlabel('No. of Iterations')
 
 if confined
     pres = [0; pres]; 
