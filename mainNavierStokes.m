@@ -1,5 +1,5 @@
 % This program solves the Navier-Stokes cavity problem
-clear; close all; clc
+%clear; close all; clc
 
 addpath('Func_ReferenceElement')
 
@@ -23,8 +23,8 @@ nx = cinput('Number of elements in each direction',10);
 ny = nx; 
 [X,T,XP,TP] = CreateMeshes(dom,nx,ny,referenceElement);
 
-figure; PlotMesh(T,X,elemV,'b-');
-figure; PlotMesh(TP,XP,elemP,'r-');
+% figure; PlotMesh(T,X,elemV,'b-');
+% figure; PlotMesh(TP,XP,elemP,'r-');
 
 % Matrices arising from the discretization
 [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
@@ -65,8 +65,8 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 
-iter = 0; tol = 0.5e-08; 
-
+iter = 0; tol = 1e-12; 
+tic
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
 while iter < 100
@@ -155,8 +155,12 @@ while iter < 100
 end
 
 end
-
-plot(Conv(:,1),log(Conv(:,2)));
+toc
+hold on
+plot(Conv(:,1)-1,log10(Conv(:,2)),'k:o','LineWidth',2,'MarkerSize',6); %b-s k:o
+l = legend('Newton-Raphson','Picard''s');
+ylabel('log_{10}(Maximum Residual)')
+xlabel('No. of Iterations')
 
 if confined
     pres = [0; pres]; 

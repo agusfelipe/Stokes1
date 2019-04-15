@@ -106,10 +106,11 @@ for ig = 1:ngaus
 
     Ke = Ke + (Nx'*Nx+Ny'*Ny)*dvolu; 
     Ge = Ge - NP_ig'*dN*dvolu; 
-    Le = Le + tau1*(NPx'*NPx+NPy'*NPy)*dvolu;
+    %Le = Le + tau1*([nx;nx;ny;ny]'*[nx;ny;nx;ny])*dvolu;
+    Le = Le - tau1*(nx'*nx+ny'*ny)*dvolu; 
     x_ig = N_ig(1:ngeom)*Xe; 
     f_igaus = SourceTerm(x_ig); 
     fe = fe + Ngp'*f_igaus*dvolu;
-    f_qe = f_qe; %- tau1*(NPx'*f_igaus+NPy'*f_igaus);
+    f_qe = f_qe - tau1*([nx; ny]'*f_igaus)*dvolu;
 end
 
