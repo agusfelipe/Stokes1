@@ -9,7 +9,7 @@ nu = 1/Re;
 
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
-elemV = 0; degreeV = 1; degreeP = 1;
+elemV = 0; degreeV = 2; degreeP = 1;
 % elemV = 1; degreeV = 2; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
@@ -26,20 +26,14 @@ ny = nx;
 % figure; PlotMesh(T,X,elemV,'b-');
 % figure; PlotMesh(TP,XP,elemP,'r-');
 
-L = zeros(size(XP,1),size(XP,1));
-f_q=zeros(size(XP,1),1);
-
 % Matrices arising from the discretization
-if degreeV == 2 % add stability only when needed (degreeV=1)
-    [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
-else
-    [K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement,nu);
-end
-
+[K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement);
 K = nu*K; 
 [ndofP,ndofV] = size(G);
 
-
+if degreeV == 2
+    L=zeros(size(L,1),(size(L,2)));
+    f_q=zeros(size())
 
 % Prescribed velocity degrees of freedom
 [dofDir,valDir,dofUnk,confined] = BC_red(X,dom,ndofV);

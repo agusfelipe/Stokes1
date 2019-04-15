@@ -1,4 +1,4 @@
-function [K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement)
+function [K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement,nu)
 % [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
 % Matrices K, G and r.h.s vector f obtained after discretizing a Stokes problem
 %
@@ -15,9 +15,8 @@ Nxi = referenceElement.Nxi;
 Neta = referenceElement.Neta;
 NP = referenceElement.NP; 
 ngeom = referenceElement.ngeom;
-mu=1;
 h=XP(2)-XP(1);
-tau1 = 1/3*h^2/(4*mu);
+tau1 = 1/3*h^2/(4*nu);
 
 
 % Number of elements and number of nodes in each element
