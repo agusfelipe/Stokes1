@@ -10,7 +10,7 @@ nu = 1/Re;
 
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
-elemV = 0; degreeV = 1; degreeP = 1;
+elemV = 0; degreeV = 2; degreeP = 1;
 % elemV = 1; degreeV = 2; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
@@ -54,13 +54,12 @@ else
    nunkP = ndofP;
 end
 
-f = f - K(:,dofDir)*valDir;
+%f = f - K(:,dofDir)*valDir;
 Mred = M(dofUnk,dofUnk); 
 Kred = K(dofUnk,dofUnk); 
 Gred = G(:,dofUnk); 
 fred = f(dofUnk); 
-A = [Kred   Gred'
-     Gred   L]; 
+
 
 % Initial guess
 disp(' ')
@@ -80,48 +79,62 @@ sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 iter = 0; 
 tol = 1e-12;
 dt = 0.01;
+teta = 1;
+step = 0;
 nstep = 100;
+velo_aux=velo;
+veloVect_aux=veloVect;
+
 tic
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
-while iter < nstep
-    fprintf('Iteration = %d\n',iter);
-    
-    C = ConvectionMatrix(X,T,referenceElement,velo);
-    Cred = C(dofUnk,dofUnk); 
-    
-    Atot = A;
-    Atot(1:nunkV,1:nunkV) = A(1:nunkV,1:nunkV) + Cred; 
-    btot = [fred - C(dofUnk,dofDir)*valDir; f_q]; 
-    
-    % Computation of residual
-    res = btot - Atot*sol0;
-    % Computation of velocity and pressure increment
-    solInc = Atot\res;
-    
-    % Update the solution
-    veloInc = zeros(ndofV,1); 
-    veloInc(dofUnk) = solInc(1:nunkV); 
-    presInc = solInc(nunkV+1:end); 
-    velo = velo + reshape(veloInc,2,[])'; 
-    pres = pres + presInc; 
-    
-    % Check convergence
-    delta1 = max(abs(veloInc)); 
-    delta2 = max(abs(res));
-    Conv(iter+1,1) = iter+1;
-    Conv(iter+1,2) = max(abs(res));
-    fprintf('Velocity increment=%8.6e, Residue max=%8.6e\n',delta1,delta2); 
-    if delta1 < tol*max(max(abs(velo))) && delta2 < tol
-        fprintf('\nConvergence achieved in iteration number %g\n',iter); 
-        break
+    while step < nstep
+        step = step +1;
+        while iter < 10
+            fprintf('Iteration = %d\n',iter);
+            iter = iter + 1;
+            C = ConvectionMatrix(X,T,referenceElement,velo_aux);
+            Cred = C(dofUnk,dofUnk); 
+            fredn = fred - (K(dofUnk,dofDir)+C(dofUnk,dofDir))*valDir;
+
+            Atot = [Mred+teta*dt*(Kred+Cred)   dt*teta*Gred'
+             Gred   L]; 
+            btot = [dt*(fredn-(Kred+Cred)*veloVect_aux(dofUnk))-Gred'*pres; f_q]; 
+
+            % Computation of residual
+            res = btot - Atot*sol0;
+            % Computation of velocity and pressure increment
+            solInc = Atot\res;
+
+            % Update the solution
+            veloInc = zeros(ndofV,1); 
+            veloInc(dofUnk) = solInc(1:nunkV); 
+            presInc = solInc(nunkV+1:end); 
+            velo = velo + reshape(veloInc,2,[])'; 
+            pres = pres + presInc; 
+
+            % Check convergence
+        %     delta1 = max(abs(veloInc)); 
+        %     delta2 = max(abs(res));
+        %     Conv(iter+1,1) = iter+1;
+        %     Conv(iter+1,2) = max(abs(res));
+        %     fprintf('Velocity increment=%8.6e, Residue max=%8.6e\n',delta1,delta2); 
+        %     if delta1 < tol*max(max(abs(velo))) && delta2 < tol
+        %         fprintf('\nConvergence achieved in iteration number %g\n',iter); 
+        %         break
+        %     end
+
+            % Update variables for next iteration
+            veloVect = reshape(velo',ndofV,1);
+            sol0 = [veloVect(dofUnk); pres]; 
+
+        end
+        veloInc = zeros(ndofV,1); 
+        veloInc(dofUnk) = solInc(1:nunkV); 
+        presInc = solInc(nunkV+1:end); 
+        velo = velo + reshape(veloInc,2,[])'; 
+        pres = pres + presInc; 
     end
-    
-    % Update variables for next iteration
-    veloVect = reshape(velo',ndofV,1);
-    sol0 = [veloVect(dofUnk); pres]; 
-    iter = iter + 1; 
-end
 else %Newton-Raphson
 while iter < 100
     fprintf('Iteration = %d\n',iter);

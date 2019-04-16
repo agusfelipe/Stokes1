@@ -55,7 +55,8 @@ else
    nunkP = ndofP;
 end
 
-f = f - K(:,dofDir)*valDir; 
+f = f - K(:,dofDir)*valDir;
+Mred = M(dofUnk,dofUnk); 
 Kred = K(dofUnk,dofUnk); 
 Gred = G(:,dofUnk); 
 fred = f(dofUnk); 
