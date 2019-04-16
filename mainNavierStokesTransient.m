@@ -76,22 +76,23 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 
-iter = 0; 
 tol = 1e-12;
 dt = 0.01;
-teta = 1;
+teta = 0;
 step = 0;
 nstep = 100;
-velo_aux=velo;
-veloVect_aux=veloVect;
-pres_aux=pres;
+
 tic
 method = cinput('Select iterative method ([0] - Picard, [1] - Newton-Raphson):',0);
 if method ==0
     while step < nstep
+        iter = 0; 
         step = step +1;
+        fprintf('Time Step = %d\n',step);
+        velo_aux=velo;
+        veloVect_aux=veloVect;
+        pres_aux=pres;
         while iter < 10
-            fprintf('Iteration = %d\n',iter);
             iter = iter + 1;
             C = ConvectionMatrix(X,T,referenceElement,velo_aux);
             Cred = C(dofUnk,dofUnk); 
@@ -99,7 +100,7 @@ if method ==0
 
             Atot = [Mred+teta*dt*(Kred+Cred)   dt*teta*Gred'
              Gred   L]; 
-            btot = [dt*(fredn-(Kred+Cred)*veloVect_aux(dofUnk))-Gred'*pres_aux; f_q]; 
+            btot = [dt*(fredn-(Kred+Cred)*veloVect_aux(dofUnk)-Gred'*pres_aux); f_q]; 
 
             % Computation of residual
             res = btot - Atot*sol0;
@@ -110,8 +111,8 @@ if method ==0
             veloInc = zeros(ndofV,1); 
             veloInc(dofUnk) = solInc(1:nunkV); 
             presInc = solInc(nunkV+1:end); 
-            velo = velo + reshape(veloInc,2,[])'; 
-            pres = pres + presInc; 
+            velo_aux = velo_aux + reshape(veloInc,2,[])'; 
+            pres_aux = pres_aux + presInc; 
 
             % Check convergence
         %     delta1 = max(abs(veloInc)); 
@@ -125,15 +126,17 @@ if method ==0
         %     end
 
             % Update variables for next iteration
-            veloVect = reshape(velo',ndofV,1);
-            sol0 = [veloVect(dofUnk); pres]; 
+            veloVect_aux = reshape(velo_aux',ndofV,1);
+            sol0 = [veloVect_aux(dofUnk); pres_aux]; 
 
         end
         veloInc = zeros(ndofV,1); 
-        veloInc(dofUnk) = solInc(1:nunkV); 
-        presInc = solInc(nunkV+1:end); 
+        veloInc(dofUnk) = sol0(1:nunkV); 
+        presInc = sol0(nunkV+1:end); 
         velo = velo + reshape(veloInc,2,[])'; 
-        pres = pres + presInc; 
+        pres = pres + presInc;
+        veloVect = reshape(velo',ndofV,1);
+        solf = [veloVect(dofUnk); pres]; 
     end
 else %Newton-Raphson
 while iter < 100
@@ -184,11 +187,11 @@ end
 
 end
 toc
-hold on
-plot(Conv(:,1)-1,log10(Conv(:,2)),'k:o','LineWidth',2,'MarkerSize',6); %b-s k:o
-l = legend('Newton-Raphson','Picard''s');
-ylabel('log_{10}(Maximum Residual)')
-xlabel('No. of Iterations')
+% hold on
+% plot(Conv(:,1)-1,log10(Conv(:,2)),'k:o','LineWidth',2,'MarkerSize',6); %b-s k:o
+% l = legend('Newton-Raphson','Picard''s');
+% ylabel('log_{10}(Maximum Residual)')
+% xlabel('No. of Iterations')
 
 if confined
     pres = [0; pres]; 

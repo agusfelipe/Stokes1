@@ -11,7 +11,7 @@ nstep = 100;
 
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
-elemV = 0; degreeV = 1; degreeP = 1;
+elemV = 0; degreeV = 2; degreeP = 1;
 % elemV = 1; degreeV = 2; degreeP = 1;
 % elemV = 11; degreeV = 1;  degreeP = 1; 
 if elemV == 11
