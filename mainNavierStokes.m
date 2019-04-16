@@ -1,11 +1,13 @@
 % This program solves the Navier-Stokes cavity problem
-%clear; close all; clc
+clear; close all; clc
 
 addpath('Func_ReferenceElement')
 
 dom = [0,1,0,1]; 
 Re = 100; 
-nu = 1/Re; 
+nu = 1/Re;
+dt = 0.001;
+nstep = 100;
 
 % Element type and interpolation degree
 % (0: quadrilaterals, 1: triangles, 11: triangles with bubble function)
@@ -31,15 +33,12 @@ f_q=zeros(size(XP,1),1);
 
 % Matrices arising from the discretization
 if degreeV == 2 % add stability only when needed (degreeV=1)
-    [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
+    [M,K,G,f] = StokesSystem(X,T,XP,TP,referenceElement);
 else
-    [K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement,nu);
+    [M,K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement,nu);
 end
-
 K = nu*K; 
 [ndofP,ndofV] = size(G);
-
-
 
 % Prescribed velocity degrees of freedom
 [dofDir,valDir,dofUnk,confined] = BC_red(X,dom,ndofV);

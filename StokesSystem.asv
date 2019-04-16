@@ -1,4 +1,4 @@
-function [M,K,G,f,L,f_q] = StokesSystemStable(X,T,XP,TP,referenceElement,nu)
+function [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
 % [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
 % Matrices K, G and r.h.s vector f obtained after discretizing a Stokes problem
 %
@@ -14,10 +14,7 @@ N = referenceElement.N;
 Nxi = referenceElement.Nxi;
 Neta = referenceElement.Neta;
 NP = referenceElement.NP; 
-ngeom = referenceElement.ngeom;
-h=XP(2)-XP(1);
-tau1 = 1/3*h^2/(4*nu);
-
+ngeom = referenceElement.ngeom; 
 
 % Number of elements and number of nodes in each element
 [nElem,nenV] = size(T);
@@ -36,12 +33,9 @@ nedofP = nenP;
 ndofV = 2*nPt_V; 
 ndofP = nPt_P; 
 
-M = zeros(ndofV,ndofV);
 K = zeros(ndofV,ndofV);
 G = zeros(ndofP,ndofV); 
 f = zeros(ndofV,1);
-L = zeros(ndofP,ndofP);
-f_q=zeros(ndofP,1);
 
 % Loop on elements
 for ielem = 1:nElem
@@ -55,15 +49,13 @@ for ielem = 1:nElem
     TPe_dof = TPe; 
     
     % Element matrices
-    [Me,Ke,Ge,fe,Le,f_qe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP,tau1);
+    [Me,Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP);
     
     % Assemble the element matrices
     M(Te_dof, Te_dof) = M(Te_dof, Te_dof) + Me;
     K(Te_dof, Te_dof) = K(Te_dof, Te_dof) + Ke;
     G(TPe_dof,Te_dof) = G(TPe_dof,Te_dof) + Ge; 
     f(Te_dof) = f(Te_dof) + fe;
-    L(TPe_dof,TPe_dof)= L(TPe_dof,TPe_dof) + Le;
-    f_q(TPe_dof) = f_q(TPe_dof) + f_qe;
 end
 
 
@@ -71,15 +63,13 @@ end
 
 
 
-function [Me,Ke,Ge,fe,Le,f_qe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP,tau1)
+function [Me,Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP)
 %
 
 Me = zeros(nedofV,nedofV);
 Ke = zeros(nedofV,nedofV);
 Ge = zeros(nedofP,nedofV);
 fe = zeros(nedofV,1);
-Le = zeros(nedofP,nedofP);
-f_qe=zeros(nedofP,1);
 
 
 % Loop on Gauss points 
@@ -101,19 +91,14 @@ for ig = 1:ngaus
     % Gradient
     Nx = [reshape([1;0]*nx,1,nedofV); reshape([0;1]*nx,1,nedofV)];
     Ny = [reshape([1;0]*ny,1,nedofV); reshape([0;1]*ny,1,nedofV)];
-    %NPx = [reshape([1;0]*nx,1,nedofP); reshape([0;1]*nx,1,nedofP)];
-    %NPy = [reshape([1;0]*ny,1,nedofP); reshape([0;1]*ny,1,nedofP)];
     % Divergence
     dN = reshape(res,1,nedofV);
-    
+
     Me = Me + Ngp'*Ngp*dvolu;
     Ke = Ke + (Nx'*Nx+Ny'*Ny)*dvolu; 
     Ge = Ge - NP_ig'*dN*dvolu; 
-    %Le = Le + tau1*([nx;nx;ny;ny]'*[nx;ny;nx;ny])*dvolu;
-    Le = Le - tau1*(nx'*nx+ny'*ny)*dvolu; 
     x_ig = N_ig(1:ngeom)*Xe; 
     f_igaus = SourceTerm(x_ig); 
-    fe = fe + Ngp'*f_igaus*dvolu;
-    f_qe = f_qe - tau1*([nx; ny]'*f_igaus)*dvolu;
+    fe = fe + Ngp'*f_igaus*dvolu; 
 end
 

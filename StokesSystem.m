@@ -1,4 +1,4 @@
-function [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
+function [M,K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
 % [K,G,f] = StokesSystem(X,T,XP,TP,referenceElement)
 % Matrices K, G and r.h.s vector f obtained after discretizing a Stokes problem
 %
@@ -33,6 +33,7 @@ nedofP = nenP;
 ndofV = 2*nPt_V; 
 ndofP = nPt_P; 
 
+M = zeros(ndofV,ndofV);
 K = zeros(ndofV,ndofV);
 G = zeros(ndofP,ndofV); 
 f = zeros(ndofV,1);
@@ -49,9 +50,10 @@ for ielem = 1:nElem
     TPe_dof = TPe; 
     
     % Element matrices
-    [Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP);
+    [Me,Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP);
     
     % Assemble the element matrices
+    M(Te_dof, Te_dof) = M(Te_dof, Te_dof) + Me;
     K(Te_dof, Te_dof) = K(Te_dof, Te_dof) + Ke;
     G(TPe_dof,Te_dof) = G(TPe_dof,Te_dof) + Ge; 
     f(Te_dof) = f(Te_dof) + fe;
@@ -62,9 +64,10 @@ end
 
 
 
-function [Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP)
+function [Me,Ke,Ge,fe] = EleMatStokes(Xe,ngeom,nedofV,nedofP,ngaus,wgp,N,Nxi,Neta,NP)
 %
 
+Me = zeros(nedofV,nedofV);
 Ke = zeros(nedofV,nedofV);
 Ge = zeros(nedofP,nedofV);
 fe = zeros(nedofV,1);
@@ -92,6 +95,7 @@ for ig = 1:ngaus
     % Divergence
     dN = reshape(res,1,nedofV);
 
+    Me = Me + Ngp'*Ngp*dvolu;
     Ke = Ke + (Nx'*Nx+Ny'*Ny)*dvolu; 
     Ge = Ge - NP_ig'*dN*dvolu; 
     x_ig = N_ig(1:ngeom)*Xe; 
