@@ -17,7 +17,7 @@ ind = find(abs(X(:,1)-xx) < 1e-6);
 sx = X(ind,1); 
 sy = X(ind,2); 
 
-figure; 
+%figure; 
 streamline(xGrid,yGrid,uGrid,vGrid,sx,sy)
 hold on 
 %plot(sx,sy,'r*')
