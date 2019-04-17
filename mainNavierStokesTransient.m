@@ -79,6 +79,8 @@ pres = zeros(nunkP,1);
 veloVect = reshape(velo',ndofV,1);
 sol0  = [veloVect(dofUnk);pres(1:nunkP)];
 solf = zeros(size(sol0,1),nstep);
+velof = zeros(size(velo,1),2*nstep);
+presf = zeros(size(pres,1),nstep);
 
 iter = 0; 
 tol = 1e-12;
@@ -89,7 +91,7 @@ step = 0;
 tic
 method = cinput('Select method ([0] - Semi-Implicit, [1] - Chorin-Temam):',0);
 if method == 0
-    teta = cinput('Select Theta for method [1] - implicit, [0.5] - Crank Nicolson):',0.5);
+    teta = cinput('Select Theta for method [1] - implicit, [0.5] - Crank Nicolson):',1);
 end
 while step < nstep
     step = step +1;
@@ -118,25 +120,15 @@ while step < nstep
         zumba = Atot\btot;
         
         % SECOND STEP
-        %if Stokes == 1
-            btot = [Mred*zumba; f_q];
-            Atot = [Mred Gred'*dt; Gred L];
-            aux = Atot\btot;
-%             clear btot;
+        btot = [Mred*zumba; f_q];
+        Atot = [Mred Gred'*dt; Gred L];
+        aux = Atot\btot;
             
         veloInc = zeros(ndofV,1); 
         veloInc(dofUnk) = aux(1:nunkV); 
         presInc = aux(nunkV+1:end); 
         velo = reshape(veloInc,2,[])'; 
         pres = presInc; 
-        %else
-%             btot = [G*aux1(1:nunk); 0]/dt;
-%             aux = U2nd\(L2nd\btot);
-%             pres = aux(1:nunkP);
-%             btot = [M*aux1(1:nunk)-dt*G'*pres; btot2nd];
-%             aux1 = UM\(LM\btot);
-%             velo = reshape(aux1(1:nunk),2,numnp)';
-        %end
     end
         
 
@@ -144,7 +136,10 @@ while step < nstep
     veloVect = reshape(velo',ndofV,1);
     sol0 = [veloVect(dofUnk); pres];
     
-    solf(:,step) = sol0;
+    %solf(:,step) = sol0;
+    velof(:,2*step-1) = velo(:,1);
+    velof(:,2*step) = velo(:,2);
+    presf(:,step) = pres ;
     figure(1); clf;
     PlotStreamlines(X,velo,dom);
     hold on
@@ -154,6 +149,7 @@ toc
 
 if confined
     pres = [0; pres];
+    presf = [zeros(1,size(presf,2)); presf];
     
 end
 
@@ -164,10 +160,20 @@ hold on
 plot(dom([1,2,2,1,1]),dom([3,3,4,4,3]),'k')
 axis equal; axis tight
 
-PlotStreamlines(X,velo,dom); 
+PlotStreamlines(X,velo,dom);
 
 if degreeP == 0
     PlotResults(X,T,pres,referenceElement.elemP,referenceElement.degreeP)
 else
     PlotResults(XP,TP,pres,referenceElement.elemP,referenceElement.degreeP)
 end
+
+% ts = 50; % TIME STEP TO PLOT
+% nPt = size(X,1); 
+% figure(2); 
+% quiver(X(1:nPt,1),X(1:nPt,2),velof(1:nPt,(2*ts-1)),velof(1:nPt,2*ts));
+% hold on 
+% plot(dom([1,2,2,1,1]),dom([3,3,4,4,3]),'k')
+% axis equal; axis tight
+% PlotStreamlines(X,velof(:,(2*ts-1):2*ts),dom);
+% PlotResults(XP,TP,presf(:,ts),referenceElement.elemP,referenceElement.degreeP)
